@@ -515,6 +515,7 @@
                                                                     </button>
                                                                     <form action="<?= site_url('provincial/delete_event/' . (int) $event->event_id); ?>"
                                                                         method="post" onsubmit="return confirm('Delete this event?');">
+                                                                        <input type="hidden" name="return_to" value="<?= uri_string(); ?>">
                                                                         <button type="submit"
                                                                             class="btn btn-outline-danger btn-sm btn-icon"
                                                                             data-toggle="tooltip"
@@ -614,6 +615,7 @@
                 </div>
                 <?= form_open('provincial/add_event', array('id' => 'eventForm')); ?>
                 <div class="modal-body">
+                    <input type="hidden" name="return_to" value="<?= uri_string(); ?>">
                     <input type="hidden" name="event_id" id="eventIdField" value="">
                     <div class="form-group">
                         <label>Event Name</label>

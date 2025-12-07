@@ -155,6 +155,19 @@ class Provincial extends CI_Controller
     }
 
     /**
+     * Standalone Events manager.
+     */
+    public function events()
+    {
+        $this->require_login();
+        $data['meet'] = $this->MeetSettings_model->get_settings();
+        $data['events'] = $this->Events_model->get_events_with_meta_and_counts();
+        $data['event_groups'] = $this->Events_model->get_groups();
+        $data['event_categories'] = $this->Events_model->get_categories();
+        $this->load->view('events_admin', $data);
+    }
+
+    /**
      * Technical officials manager.
      */
     public function technical()
@@ -636,7 +649,7 @@ class Provincial extends CI_Controller
             $this->session->set_flashdata('error', validation_errors('', ''));
         }
 
-        redirect('provincial/admin');
+        $this->redirect_back();
     }
 
     // CRUD: update event
@@ -667,7 +680,7 @@ class Provincial extends CI_Controller
             $this->session->set_flashdata('error', validation_errors('', ''));
         }
 
-        redirect('provincial/admin');
+        $this->redirect_back();
     }
 
     // CRUD: delete event
@@ -676,20 +689,18 @@ class Provincial extends CI_Controller
         $id = (int) $event_id;
         if ($id <= 0) {
             $this->session->set_flashdata('error', 'Invalid event.');
-            redirect('provincial/admin');
-            return;
+            $this->redirect_back();
         }
 
         $existing = $this->Events_model->get_event_details($id);
         if (!$existing) {
             $this->session->set_flashdata('error', 'Event not found.');
-            redirect('provincial/admin');
-            return;
+            $this->redirect_back();
         }
 
         $this->Events_model->delete_event($id);
         $this->session->set_flashdata('success', 'Event deleted.');
-        redirect('provincial/admin');
+        $this->redirect_back();
     }
 
     /**
@@ -811,6 +822,18 @@ class Provincial extends CI_Controller
             redirect('login');
             exit;
         }
+    }
+
+    /**
+     * Resolve a safe redirect target from POST data (used by shared forms).
+     */
+    private function redirect_back($default = 'provincial/admin')
+    {
+        $target = trim((string) $this->input->post('return_to', TRUE));
+        if ($target === '' || stripos($target, 'http://') === 0 || stripos($target, 'https://') === 0 || strpos($target, '//') === 0) {
+            $target = $default;
+        }
+        redirect($target);
     }
 
     /**
