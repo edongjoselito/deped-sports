@@ -31,6 +31,13 @@ class Provincial extends CI_Controller
             ? $this->Winners_model->get_medal_tally_by_group($group, $paraMode)
             : $this->Winners_model->get_medal_tally($paraMode);
 
+        // 🔹 NEW: one-row-per-event medal overview for "Events with Results"
+        $events_results = $this->Winners_model->get_event_results_overview(
+            $isGrouped ? $group : null,
+            $municipality,
+            $paraMode
+        );
+
         $data = array(
             'active_group' => $active,
             'active_municipality' => $municipality,
@@ -39,7 +46,8 @@ class Provincial extends CI_Controller
             'events_list'  => $this->Events_model->get_events_with_meta_and_counts('exclude'),
             'municipality_tally' => $tally,
             'municipalities_all' => $this->Address_model->get_municipalities(),
-            'meet'         => $this->MeetSettings_model->get_settings(), // NEW
+            'meet'         => $this->MeetSettings_model->get_settings(),
+            'events_results' => $events_results, // 👈 pass to view
         );
 
         // Map municipality => logo for quick lookup in views
@@ -57,15 +65,13 @@ class Provincial extends CI_Controller
         $this->load->view('provincial_landing', $data);
     }
 
+
     // Optional alias
     public function standings()
     {
         $this->index();
     }
 
-    /**
-     * Para/Paralympic events landing (separate from main standings).
-     */
     public function para()
     {
         $municipality = $this->input->get('municipality', TRUE);
@@ -74,6 +80,13 @@ class Provincial extends CI_Controller
         $winners  = $this->Winners_model->get_winners_list(null, $municipality, $paraMode, 'like');
         $overview = $this->Winners_model->get_overview(null, $municipality, $paraMode);
         $tally    = $this->Winners_model->get_medal_tally($paraMode);
+
+        // 🔹 NEW: per-event medals for PARA events
+        $events_results = $this->Winners_model->get_event_results_overview(
+            null,          // no Elementary/Secondary filter
+            $municipality,
+            $paraMode      // include only PARA/Paragames based on event_name
+        );
 
         $data = array(
             'active_group' => 'PARA',
@@ -84,6 +97,7 @@ class Provincial extends CI_Controller
             'municipality_tally' => $tally,
             'municipalities_all' => $this->Address_model->get_municipalities(),
             'meet'         => $this->MeetSettings_model->get_settings(),
+            'events_results' => $events_results, // 👈 pass to view
         );
 
         // Map municipality => logo for quick lookup in views
@@ -100,6 +114,7 @@ class Provincial extends CI_Controller
 
         $this->load->view('provincial_landing', $data);
     }
+
 
     public function admin()
     {

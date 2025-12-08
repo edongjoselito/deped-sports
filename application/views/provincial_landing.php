@@ -1421,38 +1421,15 @@
                         foreach ($winnersSorted as $w) {
                             $eventId = $w->event_id ?? null;
 
-                            // ✅ Build a more specific key for PARAGAMES so entries with the same event name
-                            //    but different winners DO NOT merge into one.
-                            if ($isParaGroup) {
-                                // Build full name once
-                                if (!empty($w->full_name)) {
-                                    $fullName = $w->full_name;
-                                } else {
-                                    $fullNameParts = array_filter(array(
-                                        $w->first_name ?? '',
-                                        $w->middle_name ?? '',
-                                        $w->last_name ?? ''
-                                    ));
-                                    $fullName = implode(' ', $fullNameParts);
-                                }
-
-                                $teamName = trim((string)($w->municipality ?? ''));
-                                $medalVal = (string)($w->medal ?? '');
-
-                                $key = 'para-' . md5(
-                                    ($w->event_name ?? '') . '|' .
-                                        ($w->event_group ?? '') . '|' .
-                                        ($w->category ?? '') . '|' .
-                                        $fullName . '|' .
-                                        $teamName . '|' .
-                                        $medalVal
+                            // ✅ Same grouping logic for ALL groups (including PARAGAMES):
+                            // one summary per Event + Group + Category
+                            $key = $eventId !== null
+                                ? 'id-' . $eventId
+                                : 'name-' . md5(
+                                    ($w->event_name  ?? '') .
+                                        ($w->event_group ?? '') .
+                                        ($w->category    ?? '')
                                 );
-                            } else {
-                                // 🔁 Original behavior for NON-PARA
-                                $key = $eventId !== null
-                                    ? 'id-' . $eventId
-                                    : 'name-' . md5(($w->event_name ?? '') . ($w->event_group ?? '') . ($w->category ?? ''));
-                            }
 
                             if (!isset($eventSummaries[$key])) {
                                 $eventSummaries[$key] = array(
@@ -1492,6 +1469,7 @@
                                 }
                             }
                         }
+
 
                         $eventSummaries = array_values($eventSummaries);
                         usort($eventSummaries, function ($a, $b) {

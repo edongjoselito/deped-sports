@@ -237,26 +237,76 @@ class Winners_model extends CI_Model
     public function get_overview($event_group = null, $municipality = null, $paraMode = 'all')
     {
         $this->db->select("
-            COUNT(DISTINCT municipality)         AS municipalities,
-            COUNT(DISTINCT event_name)           AS events,
-            SUM(medal = 'Gold')                  AS gold,
-            SUM(medal = 'Silver')                AS silver,
-            SUM(medal = 'Bronze')                AS bronze,
-            COUNT(*)                             AS total_medals,
-            MAX(created_at)                      AS last_update
-        ", FALSE);
+        COUNT(DISTINCT event_id)             AS events,           -- 🔁 use event_id, not event_name
+        COUNT(DISTINCT municipality)         AS municipalities,
+        SUM(medal = 'Gold')                  AS gold,
+        SUM(medal = 'Silver')                AS silver,
+        SUM(medal = 'Bronze')                AS bronze,
+        COUNT(*)                             AS total_medals,
+        MAX(created_at)                      AS last_update
+    ", FALSE);
         $this->db->from('winners');
+
+        // PARA include/exclude based on event_name
         $this->apply_para_filter($this->db, $paraMode, 'event_name');
 
+        // Only filter by event_group when it's clearly Elementary/Secondary
         if ($event_group === 'Elementary' || $event_group === 'Secondary') {
             $this->db->where('event_group', $event_group);
         }
+
         if (!empty($municipality)) {
             $this->db->where('municipality', $municipality);
         }
 
         return $this->db->get()->row();
     }
+
+    /**
+     * Per-event results: one row per event with Gold / Silver / Bronze municipalities.
+     * Use this for the "Events with Results" table (overall + PARA).
+     */
+    public function get_event_results_overview($event_group = null, $municipality = null, $paraMode = 'all')
+    {
+        $this->db->select("
+        event_id,
+        event_name,
+        event_group,
+        category,
+        MAX(CASE WHEN medal = 'Gold'   THEN municipality END) AS gold_team,
+        MAX(CASE WHEN medal = 'Silver' THEN municipality END) AS silver_team,
+        MAX(CASE WHEN medal = 'Bronze' THEN municipality END) AS bronze_team
+    ", FALSE);
+        $this->db->from('winners');
+
+        // Include/exclude PARA based on event_name
+        $this->apply_para_filter($this->db, $paraMode, 'event_name');
+
+        // For main standings: Elementary / Secondary filter
+        if ($event_group === 'Elementary' || $event_group === 'Secondary') {
+            $this->db->where('event_group', $event_group);
+        }
+
+        // Optional: only events where this municipality appears as medalist
+        if (!empty($municipality)) {
+            $this->db->where('municipality', $municipality);
+        }
+
+        // 1 row per event
+        $this->db->group_by(array(
+            'event_id',
+            'event_name',
+            'event_group',
+            'category'
+        ));
+
+        $this->db->order_by('event_group', 'ASC');
+        $this->db->order_by('event_name', 'ASC');
+        $this->db->order_by('category', 'ASC');
+
+        return $this->db->get()->result();
+    }
+
 
     /**
      * Check if an event has any winners.

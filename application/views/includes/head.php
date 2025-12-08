@@ -5,8 +5,8 @@
     <meta content="Responsive bootstrap 4 admin template" name="description" />
     <meta content="Coderthemes" name="author" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <link rel="icon" type="image/x-icon" href="<?= base_url('assets/images/favicon.ico'); ?>">
-    <link rel="shortcut icon" href="<?= base_url('assets/images/favicon.ico'); ?>">
+    <link rel="icon" type="image/x-icon" href="<?= base_url('assets/images/smalllogo.png'); ?>">
+    <link rel="shortcut icon" href="<?= base_url('assets/images/smalllogo.png'); ?>">
     <link href="<?= base_url(); ?>assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
     <link href="<?= base_url(); ?>assets/libs/fullcalendar/fullcalendar.min.css" rel="stylesheet" type="text/css" />
     <link href="<?= base_url(); ?>assets/libs/select2/select2.min.css" rel="stylesheet" type="text/css" />
@@ -33,6 +33,7 @@
             font-display: swap;
             src: url('<?= base_url('assets/fonts/montserrat/Montserrat-Regular.ttf'); ?>') format('truetype');
         }
+
         @font-face {
             font-family: 'Montserrat';
             font-style: normal;
@@ -40,6 +41,7 @@
             font-display: swap;
             src: url('<?= base_url('assets/fonts/montserrat/Montserrat-Medium.ttf'); ?>') format('truetype');
         }
+
         @font-face {
             font-family: 'Montserrat';
             font-style: normal;
@@ -47,6 +49,7 @@
             font-display: swap;
             src: url('<?= base_url('assets/fonts/montserrat/Montserrat-SemiBold.ttf'); ?>') format('truetype');
         }
+
         @font-face {
             font-family: 'Montserrat';
             font-style: normal;
@@ -58,7 +61,13 @@
         :root {
             --app-font: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
-        body, button, input, select, textarea, .btn {
+
+        body,
+        button,
+        input,
+        select,
+        textarea,
+        .btn {
             font-family: var(--app-font);
         }
     </style>
