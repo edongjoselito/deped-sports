@@ -170,27 +170,26 @@ class Provincial extends CI_Controller
                     }
 
                     // 🔁 Duplicate guard: same event + same medal + same winner/team + same municipality
-                    if ($this->Winners_model->winner_exists(
-                        $event->event_id,
-                        $row['medal'],
-                        $row['first_name'],
-                        $row['middle_name'],
-                        $row['last_name'],
-                        $row['municipality']
-                    )) {
-                        // Build a friendly label for the flash message
-                        $displayName = trim($row['first_name'] . ' ' . $row['last_name']);
-                        if ($displayName === '') {
-                            $displayName = $row['first_name'];
-                        }
-                        $duplicates[] = sprintf(
-                            '%s – %s (%s)',
-                            $row['medal'],
-                            $displayName,
-                            $row['municipality']
-                        );
-                        continue; // ⏭ skip insert
-                    }
+                    // if ($this->Winners_model->winner_exists(
+                    //     $event->event_id,
+                    //     $row['medal'],
+                    //     $row['first_name'],
+                    //     $row['middle_name'],
+                    //     $row['last_name'],
+                    //     $row['municipality']
+                    // )) {
+                    //     $displayName = trim($row['first_name'] . ' ' . $row['last_name']);
+                    //     if ($displayName === '') {
+                    //         $displayName = $row['first_name'];
+                    //     }
+                    //     $duplicates[] = sprintf(
+                    //         '%s – %s (%s)',
+                    //         $row['medal'],
+                    //         $displayName,
+                    //         $row['municipality']
+                    //     );
+                    //     continue;
+                    // }
 
                     $insert = array(
                         'event_id'     => $event->event_id,
