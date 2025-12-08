@@ -113,7 +113,7 @@
                <div class="logo-box">
                    <a href="#" class="logo text-center logo-dark">
                        <span class="logo-lg">
-                           <img src="<?= base_url(); ?>assets/images/favicon.ico" alt="" height="18">
+                           <img src="<?= base_url(); ?>assets/images/promeet.png" alt="" height="18">
                            <!-- <span class="logo-lg-text-dark">Velonic</span> -->
                        </span>
                        <span class="logo-sm">
@@ -124,7 +124,7 @@
 
                    <a href="#" class="logo text-center logo-light">
                        <span class="logo-lg">
-                           <img src="<?= base_url(); ?>assets/images/favicon.ico" alt="" height="45">
+                           <img src="<?= base_url(); ?>assets/images/promeet.png" alt="" height="50">
                            <!-- <span class="logo-lg-text-dark">Velonic</span> -->
                        </span>
                        <span class="logo-sm">
