@@ -1401,28 +1401,65 @@
                                 return strcasecmp($a->municipality ?? '', $b->municipality ?? '');
                             });
                         }
+                        $isParaGroup = (isset($group) && strtoupper($group) === 'PARA');
+
                         $eventSummaries = array();
                         foreach ($winnersSorted as $w) {
                             $eventId = $w->event_id ?? null;
-                            $key = $eventId !== null ? 'id-' . $eventId : 'name-' . md5(($w->event_name ?? '') . ($w->event_group ?? '') . ($w->category ?? ''));
+
+                            // ✅ Build a more specific key for PARAGAMES so entries with the same event name
+                            //    but different winners DO NOT merge into one.
+                            if ($isParaGroup) {
+                                // Build full name once
+                                if (!empty($w->full_name)) {
+                                    $fullName = $w->full_name;
+                                } else {
+                                    $fullNameParts = array_filter(array(
+                                        $w->first_name ?? '',
+                                        $w->middle_name ?? '',
+                                        $w->last_name ?? ''
+                                    ));
+                                    $fullName = implode(' ', $fullNameParts);
+                                }
+
+                                $teamName = trim((string)($w->municipality ?? ''));
+                                $medalVal = (string)($w->medal ?? '');
+
+                                $key = 'para-' . md5(
+                                    ($w->event_name ?? '') . '|' .
+                                        ($w->event_group ?? '') . '|' .
+                                        ($w->category ?? '') . '|' .
+                                        $fullName . '|' .
+                                        $teamName . '|' .
+                                        $medalVal
+                                );
+                            } else {
+                                // 🔁 Original behavior for NON-PARA
+                                $key = $eventId !== null
+                                    ? 'id-' . $eventId
+                                    : 'name-' . md5(($w->event_name ?? '') . ($w->event_group ?? '') . ($w->category ?? ''));
+                            }
+
                             if (!isset($eventSummaries[$key])) {
                                 $eventSummaries[$key] = array(
-                                    'event_name' => $w->event_name ?? 'Unknown Event',
-                                    'event_group' => $w->event_group ?? '-',
-                                    'category' => $w->category ?? '-',
-                                    'gold' => 0,
-                                    'silver' => 0,
-                                    'bronze' => 0,
-                                    'teams' => array(),
-                                    'gold_teams' => array(),
+                                    'event_name'   => $w->event_name ?? 'Unknown Event',
+                                    'event_group'  => $w->event_group ?? '-',
+                                    'category'     => $w->category ?? '-',
+                                    'gold'         => 0,
+                                    'silver'       => 0,
+                                    'bronze'       => 0,
+                                    'teams'        => array(),
+                                    'gold_teams'   => array(),
                                     'silver_teams' => array(),
                                     'bronze_teams' => array()
                                 );
                             }
+
                             $teamName = trim((string)($w->municipality ?? ''));
                             if ($teamName !== '' && !in_array($teamName, $eventSummaries[$key]['teams'], true)) {
                                 $eventSummaries[$key]['teams'][] = $teamName;
                             }
+
                             $medal = strtolower($w->medal ?? '');
                             if ($medal === 'gold') {
                                 $eventSummaries[$key]['gold'] += 1;
@@ -1441,6 +1478,7 @@
                                 }
                             }
                         }
+
                         $eventSummaries = array_values($eventSummaries);
                         usort($eventSummaries, function ($a, $b) {
                             return strcasecmp($a['event_name'], $b['event_name']);
@@ -1474,6 +1512,8 @@
                                 return strcasecmp($a['event_name'], $b['event_name']);
                             });
                         }
+                        $events = !empty($eventSummaries) ? count($eventSummaries) : 0;
+
                         ?>
 
                         <?php if (empty($activeMunicipality)): ?>
@@ -1935,9 +1975,9 @@
                                 <thead>
                                     <tr>
                                         <th>Team</th>
-        <th class="text-center col-gold"><span class="medal-icon">🥇</span>Gold</th>
-        <th class="text-center col-silver"><span class="medal-icon">🥈</span>Silver</th>
-        <th class="text-center col-bronze"><span class="medal-icon">🥉</span>Bronze</th>
+                                        <th class="text-center col-gold"><span class="medal-icon">🥇</span>Gold</th>
+                                        <th class="text-center col-silver"><span class="medal-icon">🥈</span>Silver</th>
+                                        <th class="text-center col-bronze"><span class="medal-icon">🥉</span>Bronze</th>
                                         <th class="text-center">Total</th>
                                         <th class="text-right">Action</th>
                                     </tr>
@@ -2066,6 +2106,8 @@
 
     <script>
         const ACTIVE_MUNICIPALITY = <?= json_encode($activeMunicipality); ?>;
+        const IS_PARA_GROUP = <?= json_encode(strtoupper($group ?? 'ALL') === 'PARA'); ?>;
+
         window.ALL_MUNICIPALITIES = <?= json_encode(array_values(array_map(function ($mun) {
                                         return isset($mun->municipality) ? trim($mun->municipality) : '';
                                     }, isset($sortedMunicipalities) && is_array($sortedMunicipalities) ? $sortedMunicipalities : array()))); ?>;
@@ -2321,9 +2363,25 @@
                 }
                 var summary = {};
                 rows.forEach(function(r) {
-                    var key = (r.event_id !== undefined && r.event_id !== null) ?
-                        'id-' + r.event_id :
-                        'name-' + ((r.event_name || '') + '|' + (r.event_group || '') + '|' + (r.category || '')).toLowerCase();
+                    var key;
+                    if (IS_PARA_GROUP) {
+                        // ✅ Same PARA key logic as PHP
+                        var sig = (
+                            (r.event_name || '') + '|' +
+                            (r.event_group || '') + '|' +
+                            (r.category || '') + '|' +
+                            (r.full_name || '') + '|' +
+                            (r.municipality || '') + '|' +
+                            (r.medal || '')
+                        ).toLowerCase();
+                        key = 'para-' + sig;
+                    } else {
+                        // 🔁 Original for non-PARA
+                        key = (r.event_id !== undefined && r.event_id !== null) ?
+                            'id-' + r.event_id :
+                            'name-' + ((r.event_name || '') + '|' + (r.event_group || '') + '|' + (r.category || '')).toLowerCase();
+                    }
+
                     if (!summary[key]) {
                         summary[key] = {
                             event_name: r.event_name || 'Unknown Event',
@@ -2338,6 +2396,7 @@
                             bronzeTeams: []
                         };
                     }
+
                     var teamName = (r.municipality || '').trim();
                     if (teamName && summary[key].teams.indexOf(teamName) === -1) {
                         summary[key].teams.push(teamName);
@@ -2397,7 +2456,8 @@
                     if (resp.overview) {
                         var o = resp.overview;
                         $('#stat-municipalities').text(TEAM_COUNT || o.municipalities || 0);
-                        $('#stat-events').text(o.events || 0);
+
+                        // (No stat-events here anymore)
 
                         var gold = o.gold || 0;
                         var silver = o.silver || 0;
@@ -2411,10 +2471,52 @@
                         $('#stat-last-update').text(formatDateTime(o.last_update));
                     }
 
-                    if (resp.winners) {
-                        $('#winners-body').html(renderWinnersRows(resp.winners));
-                        $('#eventsRecordedBody').html(renderEventSummaries(resp.winners));
+
+                    if (resp) {
+                        // Make sure winners is always an array
+                        var winnersArr = Array.isArray(resp.winners) ? resp.winners : [];
+
+                        // Update tables (main winners and events recorded panel)
+                        $('#winners-body').html(renderWinnersRows(winnersArr));
+                        $('#eventsRecordedBody').html(renderEventSummaries(winnersArr));
+
+                        var eventsCount;
+
+                        if (IS_PARA_GROUP) {
+                            // ✅ For PARAGAMES: count each distinct winner entry (same logic as PHP key)
+                            var eventKeys = {};
+                            winnersArr.forEach(function(r) {
+                                var sig = (
+                                    (r.event_name || '') + '|' +
+                                    (r.event_group || '') + '|' +
+                                    (r.category || '') + '|' +
+                                    (r.full_name || '') + '|' +
+                                    (r.municipality || '') + '|' +
+                                    (r.medal || '')
+                                ).toLowerCase();
+                                eventKeys['para-' + sig] = true;
+                            });
+                            eventsCount = Object.keys(eventKeys).length;
+                        } else {
+                            // 🔁 Original behavior for non-PARA
+                            var eventKeys = {};
+                            winnersArr.forEach(function(r) {
+                                var key;
+                                if (r.event_id !== null && r.event_id !== undefined) {
+                                    key = 'id-' + r.event_id;
+                                } else {
+                                    key = 'name-' + ((r.event_name || '') + '|' + (r.event_group || '') + '|' + (r.category || '')).toLowerCase();
+                                }
+                                eventKeys[key] = true;
+                            });
+                            eventsCount = Object.keys(eventKeys).length;
+                        }
+
+                        $('#stat-events').text(eventsCount);
+
                     }
+
+
                 }).fail(function() {
                     // fail silently for now
                 });
