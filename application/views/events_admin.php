@@ -103,25 +103,25 @@
                         </div>
                     </div>
 
-                    <!-- Alerts -->
+                    <!-- Alerts (kept but hidden; SweetAlert will show instead) -->
                     <div class="row">
                         <div class="col-lg-8">
                             <?php if (!empty($success_message)): ?>
-                                <div class="alert alert-success alert-dismissible fade show">
+                                <div class="alert alert-success alert-dismissible fade show d-none">
                                     <?= $success_message; ?>
                                     <button type="button" class="close" data-dismiss="alert">&times;</button>
                                 </div>
                             <?php endif; ?>
 
                             <?php if (!empty($error_message)): ?>
-                                <div class="alert alert-danger alert-dismissible fade show">
+                                <div class="alert alert-danger alert-dismissible fade show d-none">
                                     <?= $error_message; ?>
                                     <button type="button" class="close" data-dismiss="alert">&times;</button>
                                 </div>
                             <?php endif; ?>
 
                             <?php if (!empty($validation_list)): ?>
-                                <div class="alert alert-danger alert-dismissible fade show">
+                                <div class="alert alert-danger alert-dismissible fade show d-none">
                                     <button type="button" class="close" data-dismiss="alert">&times;</button>
                                     <ul class="mb-0 pl-3" style="list-style: disc;">
                                         <?= $validation_list; ?>
@@ -282,6 +282,46 @@
 
     <script>
         $(function() {
+
+            // Helper: SweetAlert or fallback to alert()
+            function showSwal(type, title, htmlMessage) {
+                if (typeof Swal !== 'undefined' && Swal.fire) {
+                    Swal.fire({
+                        icon: type,
+                        title: title,
+                        html: htmlMessage,
+                        confirmButtonColor: (type === 'success') ? '#3085d6' : '#d33'
+                    });
+                } else if (typeof swal !== 'undefined') {
+                    // SweetAlert v1 fallback
+                    swal({
+                        title: title,
+                        text: $("<div>").html(htmlMessage).text(),
+                        icon: type
+                    });
+                } else {
+                    // Browser alert fallback
+                    alert(title + "\n\n" + $("<div>").html(htmlMessage).text());
+                }
+            }
+
+            // ✅ Show SweetAlert for flash messages (does NOT block saving)
+            <?php if (!empty($success_message)): ?>
+                showSwal('success', 'Success', <?= json_encode($success_message); ?>);
+            <?php endif; ?>
+
+            <?php if (!empty($error_message)): ?>
+                showSwal('error', 'Error', <?= json_encode($error_message); ?>);
+            <?php endif; ?>
+
+            <?php if (!empty($validation_list)): ?>
+                showSwal(
+                    'warning',
+                    'Validation Error',
+                    `<ul style="text-align:left; margin-left:20px;"><?= $validation_list; ?></ul>`
+                );
+            <?php endif; ?>
+
             if ($.fn.tooltip) {
                 $('[data-toggle="tooltip"]').tooltip({
                     container: 'body'
@@ -334,6 +374,8 @@
                 setEventEditMode(data);
                 $('#eventModal').modal('show');
             });
+
+            // ⚠️ No SweetAlert on submit here – form posts normally to CI controller.
 
             var showWinnersOnly = false;
             var $filterWinnersBtn = $('#filterWinnersBtn');
