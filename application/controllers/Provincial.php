@@ -134,13 +134,13 @@ class Provincial extends CI_Controller
                 foreach ($winnerRows as $row) {
                     $groupId = (int) $this->input->post('group_id', TRUE);
                     $categoryId = (int) $this->input->post('category_id', TRUE);
-                    $groupName = $event->group_name ?? 'Unspecified';
+                    $groupName = isset($event->group_name) ? $event->group_name : '';
                     $categoryName = $event->category_name;
 
                     if ($groupId > 0) {
                         $groupRow = $this->Events_model->get_group($groupId);
                         if ($groupRow && !empty($groupRow->group_name)) {
-                            $groupName = $groupRow->group_name;
+                        $groupName = isset($groupRow->group_name) ? $groupRow->group_name : '';
                         }
                     }
 
@@ -552,7 +552,7 @@ class Provincial extends CI_Controller
 
             $groupId = (int) $this->input->post('group_id', TRUE);
             $categoryId = (int) $this->input->post('category_id', TRUE);
-            $groupName = $event->group_name ?? 'Unspecified';
+            $groupName = isset($event->group_name) ? $event->group_name : '';
             $categoryName = $event->category_name;
 
             if ($groupId > 0) {

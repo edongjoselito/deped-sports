@@ -193,7 +193,7 @@
                                             <option value="<?= (int)$ev->event_id; ?>"
                                                 data-winners="<?= $wcount; ?>"
                                                 <?= ($selected_id === (int)$ev->event_id) ? 'selected' : ''; ?>>
-                                                <?= htmlspecialchars($ev->event_name . ' (' . ($ev->group_name ?? 'Unspecified') . ')', ENT_QUOTES, 'UTF-8'); ?>
+                                                <?= htmlspecialchars($ev->event_name . ' (' . ($ev->group_name ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                                                 <?= $wcount > 0 ? ' — ' . $wcount . ' winner' . ($wcount > 1 ? 's' : '') : ''; ?>
                                             </option>
                                         <?php endforeach; ?>

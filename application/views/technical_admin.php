@@ -362,7 +362,7 @@
                         $groupSelect.append(
                             $('<option>', {
                                 value: match.group_id || match.group_name,
-                                text: match.group_name || 'Unspecified'
+                                text: match.group_name || ''
                             })
                         ).val(match.group_id || match.group_name);
                     }
@@ -370,7 +370,7 @@
                         $catSelect.append(
                             $('<option>', {
                                 value: match.category_id || match.category_name,
-                                text: match.category_name || 'Unspecified'
+                                text: match.category_name || ''
                             })
                         ).val(match.category_id || match.category_name);
                     }

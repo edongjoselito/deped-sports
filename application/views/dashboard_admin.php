@@ -631,8 +631,9 @@
                         <select name="group_id" id="eventGroup" class="form-control" required>
                             <option value="">-- Select Group --</option>
                             <?php foreach ($event_groups_list as $group): ?>
+                                <?php $groupLabel = trim($group->group_name ?? '') !== '' ? $group->group_name : ''; ?>
                                 <option value="<?= (int) $group->group_id; ?>">
-                                    <?= htmlspecialchars($group->group_name, ENT_QUOTES, 'UTF-8'); ?>
+                                    <?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8'); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -887,9 +888,10 @@
                 return (a.name || '').localeCompare(b.name || '');
             });
             var groupOptions = <?= json_encode(array_map(function ($g) {
+                $label = isset($g->group_name) && trim($g->group_name) !== '' ? $g->group_name : '';
                 return array(
                     'id' => (int) $g->group_id,
-                    'name' => $g->group_name,
+                    'name' => $label,
                 );
             }, $event_groups_list)); ?>;
             groupOptions.sort(function(a, b) {
@@ -931,7 +933,7 @@
                 $winnerGroupSelect.empty().append('<option value="">-- Select Group --</option>');
                 groupOptions.forEach(function (g) {
                     $winnerGroupSelect.append(
-                        $('<option>', { value: g.id, text: g.name || 'Unspecified' })
+                        $('<option>', { value: g.id, text: g.name || '' })
                     );
                 });
 
