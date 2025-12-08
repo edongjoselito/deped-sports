@@ -254,6 +254,8 @@
                     $municipalities_list = isset($municipalities) ? $municipalities : array();
                     $meet_title = isset($meet->meet_title) ? $meet->meet_title : 'Provincial Meet';
                     $meet_year  = isset($meet->meet_year)  ? $meet->meet_year  : date('Y');
+                    $flash_success = $this->session->flashdata('success');
+                    $flash_error   = $this->session->flashdata('error');
                     ?>
 
                     <div class="row">
@@ -514,7 +516,10 @@
                                                                         <i class="mdi mdi-pencil"></i>
                                                                     </button>
                                                                     <form action="<?= site_url('provincial/delete_event/' . (int) $event->event_id); ?>"
-                                                                        method="post" onsubmit="return confirm('Delete this event?');">
+                                                                        method="post"
+                                                                        class="confirm-submit"
+                                                                        data-confirm="Delete this event?"
+                                                                        data-confirm-title="Delete event">
                                                                         <input type="hidden" name="return_to" value="<?= uri_string(); ?>">
                                                                         <button type="submit"
                                                                             class="btn btn-outline-danger btn-sm btn-icon"
@@ -828,6 +833,26 @@
                 $('[data-toggle="tooltip"]').tooltip({
                     container: 'body'
                 });
+            }
+            if (window.Swal) {
+                var flashSuccess = <?= json_encode($flash_success ?? ''); ?>;
+                var flashError   = <?= json_encode($flash_error ?? ''); ?>;
+                if (flashSuccess) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: flashSuccess,
+                        timer: 2200,
+                        showConfirmButton: false
+                    });
+                }
+                if (flashError) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Notice',
+                        text: flashError
+                    });
+                }
             }
 
             var createAction = "<?= site_url('provincial/admin'); ?>";
@@ -1293,6 +1318,31 @@
                     [3, 'desc']
                 ]).draw();
             }
+
+            // Generic confirm using SweetAlert
+            $('.confirm-submit').on('submit', function(e) {
+                var form = this;
+                var title = form.getAttribute('data-confirm-title') || 'Are you sure?';
+                var text = form.getAttribute('data-confirm') || 'Proceed with this action?';
+                if (!window.Swal) {
+                    return true;
+                }
+                e.preventDefault();
+                Swal.fire({
+                    title: title,
+                    text: text,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, continue',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#d33'
+                }).then(function(result) {
+                    if (result && (result.isConfirmed || result.value === true)) {
+                        form.submit();
+                    }
+                });
+                return false;
+            });
 
             <?php if (!empty($validation_list) || !empty($error_message)): ?>
                 setCreateMode();

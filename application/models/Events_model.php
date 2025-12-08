@@ -158,12 +158,16 @@ class Events_model extends CI_Model
         $this->db->join('winners w', 'w.event_id = em.event_id', 'left');
         if ($paraMode === 'include') {
             $this->db->group_start();
-            $this->db->like('LOWER(em.event_name)', 'para games');
+            $this->db->like('LOWER(em.event_name)', 'paragames');
+            $this->db->or_like('LOWER(em.event_name)', 'para games');
+            $this->db->or_like('LOWER(em.event_name)', 'para game');
             $this->db->or_like('LOWER(em.event_name)', 'paralympic games');
             $this->db->group_end();
         } elseif ($paraMode === 'exclude') {
             $this->db->group_start();
+            $this->db->not_like('LOWER(em.event_name)', 'paragames');
             $this->db->not_like('LOWER(em.event_name)', 'para games');
+            $this->db->not_like('LOWER(em.event_name)', 'para game');
             $this->db->not_like('LOWER(em.event_name)', 'paralympic games');
             $this->db->group_end();
         }

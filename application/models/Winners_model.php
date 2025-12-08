@@ -19,10 +19,14 @@ class Winners_model extends CI_Model
 
         $builder->group_start();
         if ($mode === 'include') {
-            $builder->like("LOWER({$field})", 'para games');
+            $builder->like("LOWER({$field})", 'paragames');
+            $builder->or_like("LOWER({$field})", 'para games');
+            $builder->or_like("LOWER({$field})", 'para game');
             $builder->or_like("LOWER({$field})", 'paralympic games');
         } else {
+            $builder->not_like("LOWER({$field})", 'paragames');
             $builder->not_like("LOWER({$field})", 'para games');
+            $builder->not_like("LOWER({$field})", 'para game');
             $builder->not_like("LOWER({$field})", 'paralympic games');
         }
         $builder->group_end();
@@ -252,5 +256,20 @@ class Winners_model extends CI_Model
         }
 
         return $this->db->get()->row();
+    }
+
+    /**
+     * Check if an event has any winners.
+     */
+    public function event_has_winners($event_id)
+    {
+        $id = (int) $event_id;
+        if ($id <= 0) {
+            return false;
+        }
+        return $this->db
+            ->where('event_id', $id)
+            ->limit(1)
+            ->count_all_results('winners') > 0;
     }
 }

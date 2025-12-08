@@ -1352,7 +1352,7 @@
                                 </a>
                                 <a href="<?= $makeGroupUrl('PARA'); ?>"
                                     class="btn btn-sm <?= $group === 'PARA' ? 'btn-primary' : 'btn-outline-primary'; ?>">
-                                    Para Games
+                                    PARAGAMES
                                 </a>
                             </div>
                             <a href="<?= $loginUrl; ?>" class="login-btn" title="Admin">

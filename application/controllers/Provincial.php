@@ -746,6 +746,11 @@ class Provincial extends CI_Controller
             $this->redirect_back();
         }
 
+        if ($this->Winners_model->event_has_winners($id)) {
+            $this->session->set_flashdata('error', 'Cannot delete this event because winners are already encoded. Remove the winners first.');
+            $this->redirect_back();
+        }
+
         $this->Events_model->delete_event($id);
         $this->session->set_flashdata('success', 'Event deleted.');
         $this->redirect_back();
