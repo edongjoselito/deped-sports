@@ -140,7 +140,7 @@ class Provincial extends CI_Controller
                     if ($groupId > 0) {
                         $groupRow = $this->Events_model->get_group($groupId);
                         if ($groupRow && !empty($groupRow->group_name)) {
-                        $groupName = isset($groupRow->group_name) ? $groupRow->group_name : '';
+                            $groupName = isset($groupRow->group_name) ? $groupRow->group_name : '';
                         }
                     }
 
@@ -686,19 +686,48 @@ class Provincial extends CI_Controller
         $this->form_validation->set_rules('category_name', 'Category', 'trim');
 
         if ($this->form_validation->run()) {
-            $name       = $this->input->post('event_name', TRUE);
-            $groupId    = (int) $this->input->post('group_id', TRUE);
+            $name         = $this->input->post('event_name', TRUE);
+            $groupId      = (int) $this->input->post('group_id', TRUE);
             $categoryName = $this->input->post('category_name', TRUE);
-            $categoryId = $categoryName !== '' ? $this->Events_model->ensure_category($categoryName) : null;
+            $categoryId   = $categoryName !== '' ? $this->Events_model->ensure_category($categoryName) : null;
 
-            $this->Events_model->create_event($name, $groupId, $categoryId);
-            $this->session->set_flashdata('success', 'Event added.');
+            $result = $this->Events_model->create_event($name, $groupId, $categoryId);
+
+            // New: handle structured result from model
+            if (is_array($result) && array_key_exists('success', $result)) {
+
+                if ($result['success']) {
+                    $this->session->set_flashdata('success', 'Event added successfully.');
+                } else {
+                    if ($result['error'] === 'duplicate') {
+                        $this->session->set_flashdata(
+                            'error',
+                            'Cannot add event: an event with the same name, group, and category already exists.'
+                        );
+                    } else {
+                        $this->session->set_flashdata(
+                            'error',
+                            'Sorry, an error occurred while saving the event. Please try again.'
+                        );
+                        // Optional: log technical DB error
+                        // log_message('error', 'create_event DB error: ' . print_r($result['db_error'], true));
+                    }
+                }
+            } else {
+                // Fallback if some other part still returns plain bool
+                if ($result) {
+                    $this->session->set_flashdata('success', 'Event added successfully.');
+                } else {
+                    $this->session->set_flashdata('error', 'Unable to save event. Please try again.');
+                }
+            }
         } else {
             $this->session->set_flashdata('error', validation_errors('', ''));
         }
 
         $this->redirect_back();
     }
+
 
     // CRUD: update event
     public function update_event()

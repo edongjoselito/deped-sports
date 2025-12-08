@@ -85,15 +85,58 @@ class Events_model extends CI_Model
     {
         return $this->db->delete('event_categories', array('category_id' => (int) $category_id));
     }
-
     public function create_event($name, $group_id, $category_id = null)
     {
-        return $this->db->insert('event_master', array(
-            'event_name'  => $name,
+        $data = array(
+            'event_name'  => trim($name),
             'group_id'    => (int) $group_id,
             'category_id' => $category_id !== null ? (int) $category_id : null,
-        ));
+        );
+
+        // ── Check for duplicate BEFORE insert ─────────────────────────────
+        $this->db->where('event_name', $data['event_name']);
+        $this->db->where('group_id', $data['group_id']);
+
+        if ($data['category_id'] === null) {
+            // CI generates "category_id IS NULL"
+            $this->db->where('category_id', null);
+        } else {
+            $this->db->where('category_id', $data['category_id']);
+        }
+
+        $existing = $this->db->get('event_master')->row();
+
+        if ($existing) {
+            // Duplicate found – do NOT insert, just return info
+            return array(
+                'success'  => false,
+                'error'    => 'duplicate',
+                'message'  => 'An event with the same name, group, and category already exists.',
+                'event_id' => (int) $existing->event_id,
+            );
+        }
+
+        // ── No duplicate, proceed with insert ─────────────────────────────
+        $ok = $this->db->insert('event_master', $data);
+
+        if ($ok) {
+            return array(
+                'success'  => true,
+                'error'    => null,
+                'event_id' => (int) $this->db->insert_id(),
+            );
+        }
+
+        // Some other DB error (not duplicate)
+        $dbError = $this->db->error(); // ['code' => ..., 'message' => ...]
+        return array(
+            'success'  => false,
+            'error'    => 'db',
+            'message'  => 'Unable to save event. Please contact the administrator.',
+            'db_error' => $dbError,
+        );
     }
+
 
     public function update_event($event_id, $name, $group_id, $category_id = null)
     {

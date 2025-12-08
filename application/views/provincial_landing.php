@@ -1371,9 +1371,23 @@
                         $silverTotal    = $overview ? (int)$overview->silver : 0;
                         $bronzeTotal    = $overview ? (int)$overview->bronze : 0;
                         $totalMedals    = $overview ? (int)$overview->total_medals : 0;
-                        $lastUpdate     = ($overview && $overview->last_update)
-                            ? date('M d, Y h:i A', strtotime($overview->last_update))
-                            : 'No data yet';
+                        // Assume last_update is stored in UTC in the DB
+                        if ($overview && !empty($overview->last_update)) {
+                            try {
+                                $dt = new DateTime($overview->last_update, new DateTimeZone('UTC')); // source timezone
+                                $dt->setTimezone(new DateTimeZone('Asia/Manila'));
+                                // No timezone text, include seconds
+                                $lastUpdate = $dt->format('M d, Y h:i:s A');
+                                // Example: "Dec 08, 2025 02:48:05 AM"
+
+                            } catch (Exception $e) {
+                                // Fallback: show raw value if something goes wrong
+                                $lastUpdate = $overview->last_update;
+                            }
+                        } else {
+                            $lastUpdate = 'No data yet';
+                        }
+
 
                         $tally = isset($municipality_tally) ? $municipality_tally : array();
                         $allMunicipalities = isset($municipalities_all) ? $municipalities_all : array();
@@ -2123,17 +2137,29 @@
 
             function formatDateTime(dtString) {
                 if (!dtString) return 'No data yet';
-                var d = new Date(dtString.replace(' ', 'T'));
+
+                // Treat dtString as UTC (e.g. "2025-12-08 02:24:00")
+                var iso = dtString.replace(' ', 'T');
+                if (!iso.endsWith('Z')) {
+                    iso += 'Z'; // force UTC
+                }
+
+                var d = new Date(iso);
                 if (isNaN(d.getTime())) return dtString;
+
                 var options = {
                     month: 'short',
                     day: '2-digit',
                     year: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    timeZone: 'Asia/Manila'
                 };
-                return d.toLocaleString(undefined, options);
+
+                // You can pass 'en-PH' or leave undefined
+                return d.toLocaleString('en-PH', options);
             }
+
 
             var eventsPanelWasVisible = false;
 
