@@ -158,9 +158,37 @@
                             <form method="get" action="<?= site_url('provincial/report'); ?>" class="filter-form">
                                 <div class="form-group mb-0">
                                     <label class="mr-2 mb-0 text-muted small">Event</label>
+                                    <?php
+                                    $events_list = is_array($events) ? $events : array();
+                                    if (!empty($events_list)) {
+                                        // Keep only events that actually have winners
+                                        $events_list = array_filter($events_list, function($ev) {
+                                            return isset($ev->winners_count) && (int)$ev->winners_count > 0;
+                                        });
+                                        usort($events_list, function ($a, $b) {
+                                            return strcasecmp($a->event_name ?? '', $b->event_name ?? '');
+                                        });
+                                    }
+                                    $uniqueEvents = array();
+                                    $seen = array();
+                                    foreach ($events_list as $ev) {
+                                        // Deduplicate by name + group + category so distinct categories remain selectable
+                                        $keyParts = array(
+                                            strtolower(trim($ev->event_name ?? '')),
+                                            strtolower(trim($ev->group_name ?? '')),
+                                            strtolower(trim($ev->category_name ?? ''))
+                                        );
+                                        $key = implode('|', $keyParts);
+                                        if (isset($seen[$key])) {
+                                            continue;
+                                        }
+                                        $seen[$key] = true;
+                                        $uniqueEvents[] = $ev;
+                                    }
+                                    ?>
                                     <select name="event_id" class="form-control" id="eventSelect">
                                         <option value="">Select event</option>
-                                        <?php foreach ($events as $ev): ?>
+                                        <?php foreach ($uniqueEvents as $ev): ?>
                                             <?php $wcount = isset($ev->winners_count) ? (int) $ev->winners_count : 0; ?>
                                             <option value="<?= (int)$ev->event_id; ?>"
                                                 data-winners="<?= $wcount; ?>"

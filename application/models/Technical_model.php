@@ -89,4 +89,32 @@ class Technical_model extends CI_Model
 
         return $this->db->get()->result();
     }
+
+    /**
+     * Fallback lookup: match by event name/group/category when IDs don't align.
+     */
+    public function get_by_labels($name = '', $group = '', $category = '')
+    {
+        $name = trim((string) $name);
+        if ($name === '') {
+            return array();
+        }
+
+        $this->db->select('t.*', false);
+        $this->db->from('technical_officials t');
+        $this->db->group_start()
+            ->like('t.event_name', $name)
+            ->or_where('SOUNDEX(t.event_name)=SOUNDEX(' . $this->db->escape($name) . ')', null, false)
+            ->group_end();
+        if ($group !== '') {
+            $this->db->like('t.event_group', $group);
+        }
+        if ($category !== '') {
+            $this->db->like('t.category', $category);
+        }
+        $this->db->order_by("FIELD(role, 'Tournament Manager', 'Technical Official')", '', false);
+        $this->db->order_by('name', 'ASC');
+
+        return $this->db->get()->result();
+    }
 }

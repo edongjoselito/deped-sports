@@ -199,6 +199,14 @@ class Provincial extends CI_Controller
         if ($selectedEvent) {
             $winners = $this->Winners_model->get_winners_by_event($selectedId);
             $technical = $this->Technical_model->get_by_event($selectedId);
+            // Fallback if IDs don't align but names match (legacy data)
+            if (empty($technical)) {
+                $technical = $this->Technical_model->get_by_labels(
+                    $selectedEvent->event_name ?? '',
+                    $selectedEvent->group_name ?? '',
+                    $selectedEvent->category_name ?? ''
+                );
+            }
         }
 
         $data = array(
