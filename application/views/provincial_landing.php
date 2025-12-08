@@ -1287,16 +1287,20 @@
                             $activeMunicipalityFilter = $activeMunicipalityHeader;
                             $group = isset($active_group) ? $active_group : 'ALL';
                             $baseLandingUrl = site_url('provincial');
-                            $makeGroupUrl = function ($targetGroup) use ($activeMunicipalityFilter, $baseLandingUrl) {
+                            $paraLandingUrl = site_url('provincial/para');
+                            $makeGroupUrl = function ($targetGroup) use ($activeMunicipalityFilter, $baseLandingUrl, $paraLandingUrl) {
                                 $params = array();
                                 if ($activeMunicipalityFilter !== '') {
                                     $params[] = 'municipality=' . urlencode($activeMunicipalityFilter);
                                 }
+                                $base = $baseLandingUrl;
                                 if ($targetGroup === 'Elementary' || $targetGroup === 'Secondary') {
                                     $params[] = 'group=' . urlencode($targetGroup);
+                                } elseif ($targetGroup === 'PARA') {
+                                    $base = $paraLandingUrl;
                                 }
                                 $query = empty($params) ? '' : '?' . implode('&', $params);
-                                return $baseLandingUrl . $query;
+                                return $base . $query;
                             };
                             $isLoggedIn = isset($this) && isset($this->session) ? (bool)$this->session->userdata('logged_in') : false;
                             $loginUrl   = $isLoggedIn ? site_url('provincial/admin') : site_url('login');
@@ -1327,6 +1331,10 @@
                                 <a href="<?= $makeGroupUrl('Secondary'); ?>"
                                     class="btn btn-sm <?= $group === 'Secondary' ? 'btn-primary' : 'btn-outline-primary'; ?>">
                                     Secondary
+                                </a>
+                                <a href="<?= $makeGroupUrl('PARA'); ?>"
+                                    class="btn btn-sm <?= $group === 'PARA' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                                    Para Games
                                 </a>
                             </div>
                             <a href="<?= $loginUrl; ?>" class="login-btn" title="Admin">
@@ -1825,7 +1833,7 @@
     $tally = isset($municipality_tally) ? $municipality_tally : array();
     $allMunicipalities = isset($municipalities_all) ? $municipalities_all : array();
     $groupContext = isset($active_group) ? $active_group : 'ALL';
-    $baseUrl = site_url('provincial');
+    $baseUrl = ($groupContext === 'PARA') ? site_url('provincial/para') : site_url('provincial');
     $groupQuery = ($groupContext === 'Elementary' || $groupContext === 'Secondary')
         ? '&group=' . urlencode($groupContext)
         : '';

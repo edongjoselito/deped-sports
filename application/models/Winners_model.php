@@ -3,6 +3,31 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Winners_model extends CI_Model
 {
+    /**
+     * Apply include/exclude filter for Para/Paralympic events.
+     *
+     * @param CI_DB_query_builder $builder
+     * @param string $mode 'exclude' (default), 'include', or 'all'
+     * @param string $field SQL field/alias for event_name
+     */
+    private function apply_para_filter($builder, $mode = 'all', $field = 'event_name')
+    {
+        $field = trim($field) !== '' ? $field : 'event_name';
+        if ($mode === 'all') {
+            return;
+        }
+
+        $builder->group_start();
+        if ($mode === 'include') {
+            $builder->like("LOWER({$field})", 'para games');
+            $builder->or_like("LOWER({$field})", 'paralympic games');
+        } else {
+            $builder->not_like("LOWER({$field})", 'para games');
+            $builder->not_like("LOWER({$field})", 'paralympic games');
+        }
+        $builder->group_end();
+    }
+
     public function insert_winner($data)
     {
         return $this->db->insert('winners', $data);
@@ -59,7 +84,7 @@ class Winners_model extends CI_Model
             ->row();
     }
 
-    public function get_winners_list($event_group = null, $municipality = null)
+    public function get_winners_list($event_group = null, $municipality = null, $paraMode = 'all')
     {
         // Build a medal tally subquery so we can rank rows by municipality performance first
         $tallyBuilder = $this->db->select("
@@ -69,6 +94,7 @@ class Winners_model extends CI_Model
             SUM(medal = 'Bronze') AS bronze_count,
             COUNT(*)              AS total_medals
         ", FALSE)->from('winners');
+        $this->apply_para_filter($tallyBuilder, $paraMode, 'event_name');
 
         if ($event_group === 'Elementary' || $event_group === 'Secondary') {
             $tallyBuilder->where('event_group', $event_group);
@@ -100,6 +126,7 @@ class Winners_model extends CI_Model
         ", FALSE);
         $this->db->from('winners w');
         $this->db->join("({$medalTallySql}) m", 'm.municipality = w.municipality', 'left');
+        $this->apply_para_filter($this->db, $paraMode, 'w.event_name');
 
         if ($event_group === 'Elementary' || $event_group === 'Secondary') {
             $this->db->where('w.event_group', $event_group);
@@ -151,7 +178,7 @@ class Winners_model extends CI_Model
     }
 
     // Medal tally by municipality (all groups)
-    public function get_medal_tally()
+    public function get_medal_tally($paraMode = 'all')
     {
         $this->db->select("
             municipality,
@@ -161,6 +188,7 @@ class Winners_model extends CI_Model
             COUNT(*)              AS total_medals
         ", FALSE);
         $this->db->from('winners');
+        $this->apply_para_filter($this->db, $paraMode, 'event_name');
         $this->db->group_by('municipality');
         $this->db->order_by('gold', 'DESC');
         $this->db->order_by('silver', 'DESC');
@@ -171,7 +199,7 @@ class Winners_model extends CI_Model
     }
 
     // Medal tally by municipality + group (Elementary / Secondary)
-    public function get_medal_tally_by_group($event_group)
+    public function get_medal_tally_by_group($event_group, $paraMode = 'all')
     {
         $this->db->select("
             municipality,
@@ -183,6 +211,7 @@ class Winners_model extends CI_Model
         ", FALSE);
         $this->db->from('winners');
         $this->db->where('event_group', $event_group);
+        $this->apply_para_filter($this->db, $paraMode, 'event_name');
         $this->db->group_by(array('municipality', 'event_group'));
         $this->db->order_by('gold', 'DESC');
         $this->db->order_by('silver', 'DESC');
@@ -193,7 +222,7 @@ class Winners_model extends CI_Model
     }
 
     // NEW: overview stats for the header cards
-    public function get_overview($event_group = null, $municipality = null)
+    public function get_overview($event_group = null, $municipality = null, $paraMode = 'all')
     {
         $this->db->select("
             COUNT(DISTINCT municipality)         AS municipalities,
@@ -205,6 +234,7 @@ class Winners_model extends CI_Model
             MAX(created_at)                      AS last_update
         ", FALSE);
         $this->db->from('winners');
+        $this->apply_para_filter($this->db, $paraMode, 'event_name');
 
         if ($event_group === 'Elementary' || $event_group === 'Secondary') {
             $this->db->where('event_group', $event_group);

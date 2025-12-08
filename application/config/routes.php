@@ -17,6 +17,7 @@ $route['provincial/admin']     = 'provincial/admin';
 $route['provincial/municipalities'] = 'provincial/municipalities';
 $route['provincial/teams'] = 'provincial/municipalities';
 $route['provincial/technical'] = 'provincial/technical';
+$route['provincial/para'] = 'provincial/para';
 $route['provincial/events'] = 'provincial/events';
 
 $route['404_override'] = '';

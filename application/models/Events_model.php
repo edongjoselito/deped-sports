@@ -138,7 +138,7 @@ class Events_model extends CI_Model
     /**
      * Fetch events with group/category and winner tallies.
      */
-    public function get_events_with_meta_and_counts()
+    public function get_events_with_meta_and_counts($paraMode = 'all')
     {
         $this->db->select('
             em.event_id,
@@ -156,6 +156,17 @@ class Events_model extends CI_Model
         $this->db->join('event_groups eg', 'eg.group_id = em.group_id', 'left');
         $this->db->join('event_categories ec', 'ec.category_id = em.category_id', 'left');
         $this->db->join('winners w', 'w.event_id = em.event_id', 'left');
+        if ($paraMode === 'include') {
+            $this->db->group_start();
+            $this->db->like('LOWER(em.event_name)', 'para games');
+            $this->db->or_like('LOWER(em.event_name)', 'paralympic games');
+            $this->db->group_end();
+        } elseif ($paraMode === 'exclude') {
+            $this->db->group_start();
+            $this->db->not_like('LOWER(em.event_name)', 'para games');
+            $this->db->not_like('LOWER(em.event_name)', 'paralympic games');
+            $this->db->group_end();
+        }
         $this->db->group_by(array(
             'em.event_id',
             'em.event_name',

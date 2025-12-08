@@ -21,20 +21,21 @@ class Provincial extends CI_Controller
         $municipality = $this->input->get('municipality', TRUE);
 
         $isGrouped = ($group === 'Elementary' || $group === 'Secondary');
+        $paraMode = 'exclude';
 
-        $winners  = $this->Winners_model->get_winners_list($isGrouped ? $group : null, $municipality);
-        $overview = $this->Winners_model->get_overview($isGrouped ? $group : null, $municipality);
+        $winners  = $this->Winners_model->get_winners_list($isGrouped ? $group : null, $municipality, $paraMode);
+        $overview = $this->Winners_model->get_overview($isGrouped ? $group : null, $municipality, $paraMode);
         $active   = $isGrouped ? $group : 'ALL';
         $tally    = $isGrouped
-            ? $this->Winners_model->get_medal_tally_by_group($group)
-            : $this->Winners_model->get_medal_tally();
+            ? $this->Winners_model->get_medal_tally_by_group($group, $paraMode)
+            : $this->Winners_model->get_medal_tally($paraMode);
 
         $data = array(
             'active_group' => $active,
             'active_municipality' => $municipality,
             'winners'      => $winners,
             'overview'     => $overview,
-            'events_list'  => $this->Events_model->get_events_with_meta_and_counts(),
+            'events_list'  => $this->Events_model->get_events_with_meta_and_counts('exclude'),
             'municipality_tally' => $tally,
             'municipalities_all' => $this->Address_model->get_municipalities(),
             'meet'         => $this->MeetSettings_model->get_settings(), // NEW
@@ -59,6 +60,44 @@ class Provincial extends CI_Controller
     public function standings()
     {
         $this->index();
+    }
+
+    /**
+     * Para/Paralympic events landing (separate from main standings).
+     */
+    public function para()
+    {
+        $municipality = $this->input->get('municipality', TRUE);
+        $paraMode = 'include';
+
+        $winners  = $this->Winners_model->get_winners_list(null, $municipality, $paraMode);
+        $overview = $this->Winners_model->get_overview(null, $municipality, $paraMode);
+        $tally    = $this->Winners_model->get_medal_tally($paraMode);
+
+        $data = array(
+            'active_group' => 'PARA',
+            'active_municipality' => $municipality,
+            'winners'      => $winners,
+            'overview'     => $overview,
+            'events_list'  => $this->Events_model->get_events_with_meta_and_counts('include'),
+            'municipality_tally' => $tally,
+            'municipalities_all' => $this->Address_model->get_municipalities(),
+            'meet'         => $this->MeetSettings_model->get_settings(),
+        );
+
+        // Map municipality => logo for quick lookup in views
+        $logoMap = array();
+        if (!empty($data['municipalities_all'])) {
+            foreach ($data['municipalities_all'] as $m) {
+                $name = isset($m->municipality) ? $m->municipality : '';
+                if ($name !== '') {
+                    $logoMap[$name] = isset($m->logo) ? $m->logo : '';
+                }
+            }
+        }
+        $data['municipality_logos'] = $logoMap;
+
+        $this->load->view('provincial_landing', $data);
     }
 
     public function admin()
