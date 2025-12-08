@@ -162,9 +162,11 @@
     #winnerModal .modal-body .form-group {
         margin-bottom: 0.55rem;
     }
+
     #winnerModal .medal-header {
         margin-bottom: 6px;
     }
+
     #winnerModal .alert-info {
         margin-bottom: 10px;
         padding: 8px 10px;
@@ -211,10 +213,12 @@
 
     /* Mobile-friendly table tweaks */
     @media (max-width: 640px) {
+
         .table td,
         .table th {
             padding: 0.45rem 0.5rem;
         }
+
         /* Hide less critical columns on mobile */
         .recent-winners-table th:nth-child(2),
         .recent-winners-table td:nth-child(2),
@@ -226,6 +230,7 @@
         .recent-winners-table td:nth-child(8) {
             display: none;
         }
+
         #eventsTable th:nth-child(3),
         #eventsTable td:nth-child(3) {
             display: none;
@@ -395,6 +400,9 @@
                                                                         aria-label="Edit"
                                                                         data-id="<?= (int) $row->id; ?>"
                                                                         data-event-id="<?= (int) $row->event_id; ?>"
+                                                                        data-event-name="<?= htmlspecialchars($row->event_name, ENT_QUOTES, 'UTF-8'); ?>"
+                                                                        data-event-group="<?= htmlspecialchars($row->event_group, ENT_QUOTES, 'UTF-8'); ?>"
+                                                                        data-category-name="<?= htmlspecialchars($row->category ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                                                         data-first-name="<?= htmlspecialchars($row->first_name, ENT_QUOTES, 'UTF-8'); ?>"
                                                                         data-middle-name="<?= htmlspecialchars($row->middle_name, ENT_QUOTES, 'UTF-8'); ?>"
                                                                         data-last-name="<?= htmlspecialchars($row->last_name, ENT_QUOTES, 'UTF-8'); ?>"
@@ -406,6 +414,7 @@
                                                                         data-team-names="<?= htmlspecialchars($row->team_names ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                                                         <i class="mdi mdi-pencil"></i>
                                                                     </button>
+
                                                                     <form action="<?= site_url('provincial/delete_winner/' . (int) $row->id); ?>"
                                                                         method="post" onsubmit="return confirm('Delete this winner?');">
                                                                         <button type="submit"
@@ -697,18 +706,18 @@
                     </div>
 
                     <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label>Group</label>
-                        <select name="group_id" id="winnerGroupSelect" class="form-control">
-                            <option value="">-- Select Group --</option>
-                        </select>
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label>Category</label>
-                        <select name="category_id" id="winnerCategorySelect" class="form-control">
-                            <option value="">-- Select Category --</option>
-                        </select>
-                    </div>
+                        <div class="form-group col-md-6">
+                            <label>Group</label>
+                            <select name="group_id" id="winnerGroupSelect" class="form-control">
+                                <option value="">-- Select Group --</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Category</label>
+                            <select name="category_id" id="winnerCategorySelect" class="form-control">
+                                <option value="">-- Select Category --</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="alert alert-info py-2">
@@ -837,7 +846,7 @@
             }
             if (window.Swal) {
                 var flashSuccess = <?= json_encode($flash_success ?? ''); ?>;
-                var flashError   = <?= json_encode($flash_error ?? ''); ?>;
+                var flashError = <?= json_encode($flash_error ?? ''); ?>;
                 if (flashSuccess) {
                     Swal.fire({
                         icon: 'success',
@@ -875,25 +884,25 @@
             var $eventGroupSelect = $('#eventGroup');
             var $eventCategorySelect = $('#eventCategory');
             var eventsMeta = <?= json_encode(array_map(function ($ev) {
-                return array(
-                    'id' => (int)$ev->event_id,
-                    'name' => $ev->event_name,
-                    'group_id' => isset($ev->group_id) ? (int)$ev->group_id : null,
-                    'group_name' => $ev->group_name ?? '',
-                    'category_id' => isset($ev->category_id) ? (int)$ev->category_id : null,
-                    'category_name' => $ev->category_name ?? '',
-                );
-            }, $events_list)); ?>;
+                                    return array(
+                                        'id' => (int)$ev->event_id,
+                                        'name' => $ev->event_name,
+                                        'group_id' => isset($ev->group_id) ? (int)$ev->group_id : null,
+                                        'group_name' => $ev->group_name ?? '',
+                                        'category_id' => isset($ev->category_id) ? (int)$ev->category_id : null,
+                                        'category_name' => $ev->category_name ?? '',
+                                    );
+                                }, $events_list)); ?>;
             eventsMeta.sort(function(a, b) {
                 return (a.name || '').localeCompare(b.name || '');
             });
             var groupOptions = <?= json_encode(array_map(function ($g) {
-                $label = isset($g->group_name) && trim($g->group_name) !== '' ? $g->group_name : '';
-                return array(
-                    'id' => (int) $g->group_id,
-                    'name' => $label,
-                );
-            }, $event_groups_list)); ?>;
+                                    $label = isset($g->group_name) && trim($g->group_name) !== '' ? $g->group_name : '';
+                                    return array(
+                                        'id' => (int) $g->group_id,
+                                        'name' => $label,
+                                    );
+                                }, $event_groups_list)); ?>;
             groupOptions.sort(function(a, b) {
                 return (a.name || '').localeCompare(b.name || '');
             });
@@ -925,31 +934,43 @@
                 $eventGroupSelect.val(data.group_id || '');
                 $eventCategorySelect.val(data.category_name || '');
             }
+
             function rebuildGroupAndCategoryOptions(eventId) {
-                var selected = eventsMeta.find(function (ev) { return ev.id === parseInt(eventId, 10); });
+                var selected = eventsMeta.find(function(ev) {
+                    return ev.id === parseInt(eventId, 10);
+                });
                 var nameKey = selected ? (selected.name || '').toLowerCase() : '';
 
                 // Always allow full group list (Elementary/Secondary)
                 $winnerGroupSelect.empty().append('<option value="">-- Select Group --</option>');
-                groupOptions.forEach(function (g) {
+                groupOptions.forEach(function(g) {
                     $winnerGroupSelect.append(
-                        $('<option>', { value: g.id, text: g.name || '' })
+                        $('<option>', {
+                            value: g.id,
+                            text: g.name || ''
+                        })
                     );
                 });
 
                 // Build unique categories for matching event name
                 var categories = {};
-                eventsMeta.forEach(function (ev) {
+                eventsMeta.forEach(function(ev) {
                     if (!nameKey || (ev.name || '').toLowerCase() === nameKey) {
                         var cKey = (ev.category_id || '') + '|' + (ev.category_name || '');
-                        categories[cKey] = { id: ev.category_id, name: ev.category_name };
+                        categories[cKey] = {
+                            id: ev.category_id,
+                            name: ev.category_name
+                        };
                     }
                 });
                 $winnerCategorySelect.empty().append('<option value="">-- Select Category --</option>');
-                Object.values(categories).forEach(function (c) {
+                Object.values(categories).forEach(function(c) {
                     if (!c.name) return;
                     $winnerCategorySelect.append(
-                        $('<option>', { value: c.id || c.name, text: c.name })
+                        $('<option>', {
+                            value: c.id || c.name,
+                            text: c.name
+                        })
                     );
                 });
 
@@ -1019,32 +1040,32 @@
                     '<button type="button" class="btn btn-link text-danger p-0 btn-remove-row">Remove</button>' +
                     '</div>' +
                     '<div class="form-row align-items-end">' +
-                        '<div class="form-group col-md-4">' +
-                            '<label class="small text-muted mb-1">Entry type</label>' +
-                            '<div class="entry-type-toggle">' +
-                                '<input type="hidden" class="entry-type-value" name="winners[' + index + '][entry_type]" value="Individual">' +
-                                '<button type="button" class="entry-type-btn" data-type="Individual">Individual</button>' +
-                                '<button type="button" class="entry-type-btn" data-type="Team">Team</button>' +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="form-group col-md-8 team-fields d-none">' +
-                            '<label class="small text-muted mb-1">Team members / names</label>' +
-                            '<textarea name="winners[' + index + '][team_names]" class="form-control form-control-sm" rows="2" placeholder="Enter one or multiple names for this team"></textarea>' +
-                        '</div>' +
+                    '<div class="form-group col-md-4">' +
+                    '<label class="small text-muted mb-1">Entry type</label>' +
+                    '<div class="entry-type-toggle">' +
+                    '<input type="hidden" class="entry-type-value" name="winners[' + index + '][entry_type]" value="Individual">' +
+                    '<button type="button" class="entry-type-btn" data-type="Individual">Individual</button>' +
+                    '<button type="button" class="entry-type-btn" data-type="Team">Team</button>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="form-group col-md-8 team-fields d-none">' +
+                    '<label class="small text-muted mb-1">Team members / names</label>' +
+                    '<textarea name="winners[' + index + '][team_names]" class="form-control form-control-sm" rows="2" placeholder="Enter one or multiple names for this team"></textarea>' +
+                    '</div>' +
                     '</div>' +
                     '<div class="form-row individual-fields">' +
-                        '<div class="form-group col-md-4">' +
-                        '<label class="small text-muted mb-1">First name</label>' +
-                        '<input type="text" name="winners[' + index + '][first_name]" class="form-control form-control-sm">' +
-                        '</div>' +
-                        '<div class="form-group col-md-4">' +
-                        '<label class="small text-muted mb-1">Middle name</label>' +
-                        '<input type="text" name="winners[' + index + '][middle_name]" class="form-control form-control-sm">' +
-                        '</div>' +
-                        '<div class="form-group col-md-4">' +
-                        '<label class="small text-muted mb-1">Last name</label>' +
-                        '<input type="text" name="winners[' + index + '][last_name]" class="form-control form-control-sm">' +
-                        '</div>' +
+                    '<div class="form-group col-md-4">' +
+                    '<label class="small text-muted mb-1">First name</label>' +
+                    '<input type="text" name="winners[' + index + '][first_name]" class="form-control form-control-sm">' +
+                    '</div>' +
+                    '<div class="form-group col-md-4">' +
+                    '<label class="small text-muted mb-1">Middle name</label>' +
+                    '<input type="text" name="winners[' + index + '][middle_name]" class="form-control form-control-sm">' +
+                    '</div>' +
+                    '<div class="form-group col-md-4">' +
+                    '<label class="small text-muted mb-1">Last name</label>' +
+                    '<input type="text" name="winners[' + index + '][last_name]" class="form-control form-control-sm">' +
+                    '</div>' +
                     '</div>' +
                     '<div class="form-row">' +
                     '<div class="form-group col-md-4">' +
@@ -1122,10 +1143,97 @@
                 isEditMode = true;
                 $winnerForm.attr('action', updateAction);
                 $('#winnerIdField').val(data.id || '');
-                $eventSelect.val(data.event_id || '').trigger('change');
-                $winnerGroupSelect.val('');
-                $winnerCategorySelect.val('');
 
+                var eventId = data.event_id ? String(data.event_id) : '';
+                var eventName = (data.event_name || '').toString();
+
+                // 1) Select event (by ID if possible, else by name, else create custom option)
+                if (eventId && $eventSelect.find('option[value="' + eventId + '"]').length) {
+                    $eventSelect.val(eventId);
+                } else if (eventName) {
+                    var matchedId = '';
+                    $eventSelect.find('option').each(function() {
+                        if ($.trim($(this).text()).toLowerCase() === eventName.toLowerCase()) {
+                            matchedId = $(this).val();
+                        }
+                    });
+                    if (matchedId) {
+                        $eventSelect.val(matchedId);
+                    } else {
+                        // create a temp option so the original event name still shows
+                        var tempValue = 'custom_' + Date.now();
+                        $eventSelect.append(
+                            $('<option>', {
+                                value: tempValue,
+                                text: eventName
+                            })
+                        );
+                        $eventSelect.val(tempValue);
+                    }
+                } else {
+                    $eventSelect.val('');
+                }
+
+                // 2) Rebuild Group + Category options based on selected event
+                rebuildGroupAndCategoryOptions($eventSelect.val());
+
+                // 3) Restore previous group (by name)
+                var groupName = (data.event_group || '').toString();
+                if (groupName) {
+                    var groupId = '';
+                    groupOptions.forEach(function(g) {
+                        if ((g.name || '').toLowerCase() === groupName.toLowerCase()) {
+                            groupId = g.id;
+                        }
+                    });
+
+                    if (groupId && $winnerGroupSelect.find('option[value="' + groupId + '"]').length) {
+                        $winnerGroupSelect.val(String(groupId));
+                    } else {
+                        // fallback: match by text or add a custom option
+                        var groupMatched = false;
+                        $winnerGroupSelect.find('option').each(function() {
+                            if ($.trim($(this).text()).toLowerCase() === groupName.toLowerCase()) {
+                                groupMatched = true;
+                                $winnerGroupSelect.val($(this).val());
+                            }
+                        });
+                        if (!groupMatched) {
+                            var customVal = 'custom_' + groupName.replace(/\s+/g, '_');
+                            $winnerGroupSelect.append(
+                                $('<option>', {
+                                    value: customVal,
+                                    text: groupName
+                                })
+                            );
+                            $winnerGroupSelect.val(customVal);
+                        }
+                    }
+                }
+
+                // 4) Restore previous category (by name)
+                var categoryName = (data.category_name || '').toString();
+                if (categoryName) {
+                    var catMatched = false;
+                    $winnerCategorySelect.find('option').each(function() {
+                        if ($.trim($(this).text()).toLowerCase() === categoryName.toLowerCase()) {
+                            catMatched = true;
+                            $winnerCategorySelect.val($(this).val());
+                        }
+                    });
+                    if (!catMatched) {
+                        var customCatVal = 'custom_' + categoryName.replace(/\s+/g, '_');
+                        $winnerCategorySelect.append(
+                            $('<option>', {
+                                value: customCatVal,
+                                text: categoryName
+                            })
+                        );
+                        $winnerCategorySelect.val(customCatVal);
+                    }
+                }
+
+                // 5) Load the winner row fields (name, team, school, coach, etc.)
                 clearAllRows();
                 rowCounter = 0;
                 addWinnerRow(data.medal || 'Gold', data);
@@ -1133,6 +1241,7 @@
                 $winnerSubmitBtn.html('<i class="mdi mdi-content-save-outline"></i> Update Winner');
                 $winnerModalLabel.text('Edit Winner');
             }
+
 
             $('#openWinnerModal').on('click', function() {
                 setCreateMode();
@@ -1158,6 +1267,9 @@
                 var data = {
                     id: $btn.data('id'),
                     event_id: $btn.data('event-id'),
+                    event_name: $btn.data('event-name') || '',
+                    event_group: $btn.data('event-group') || '',
+                    category_name: $btn.data('category-name') || '',
                     first_name: $btn.data('first-name'),
                     middle_name: $btn.data('middle-name'),
                     last_name: $btn.data('last-name'),
@@ -1172,6 +1284,7 @@
                 setEditMode(data);
                 $('#winnerModal').modal('show');
             });
+
 
             $('.btn-edit-event').on('click', function() {
                 var $btn = $(this);
@@ -1191,10 +1304,19 @@
                 $('#recentWinnersTable').DataTable({
                     pageLength: 25,
                     lengthChange: true,
-                    order: [[8, 'desc'], [4, 'desc']],
-                    columnDefs: [
-                        { targets: -1, orderable: false, searchable: false },
-                        { targets: 8, visible: false }
+                    order: [
+                        [8, 'desc'],
+                        [4, 'desc']
+                    ],
+                    columnDefs: [{
+                            targets: -1,
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
+                            targets: 8,
+                            visible: false
+                        }
                     ],
                     autoWidth: false
                 });
