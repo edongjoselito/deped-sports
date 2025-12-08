@@ -84,7 +84,7 @@ class Winners_model extends CI_Model
             ->row();
     }
 
-    public function get_winners_list($event_group = null, $municipality = null, $paraMode = 'all')
+    public function get_winners_list($event_group = null, $municipality = null, $paraMode = 'all', $municipalityMatch = 'exact')
     {
         // Build a medal tally subquery so we can rank rows by municipality performance first
         $tallyBuilder = $this->db->select("
@@ -100,7 +100,11 @@ class Winners_model extends CI_Model
             $tallyBuilder->where('event_group', $event_group);
         }
         if (!empty($municipality)) {
-            $tallyBuilder->where('municipality', $municipality);
+            if ($municipalityMatch === 'like') {
+                $tallyBuilder->like('municipality', $municipality);
+            } else {
+                $tallyBuilder->where('municipality', $municipality);
+            }
         }
 
         $tallyBuilder->group_by('municipality');
@@ -128,11 +132,15 @@ class Winners_model extends CI_Model
         $this->db->join("({$medalTallySql}) m", 'm.municipality = w.municipality', 'left');
         $this->apply_para_filter($this->db, $paraMode, 'w.event_name');
 
-        if ($event_group === 'Elementary' || $event_group === 'Secondary') {
+        if ($event_group === 'Elementary' || $event_group === 'Secondary' || $event_group === 'PARA') {
             $this->db->where('w.event_group', $event_group);
         }
         if (!empty($municipality)) {
-            $this->db->where('w.municipality', $municipality);
+            if ($municipalityMatch === 'like') {
+                $this->db->like('w.municipality', $municipality);
+            } else {
+                $this->db->where('w.municipality', $municipality);
+            }
         }
 
         // Order: municipality medal tally, then medal, then event/group/category/name

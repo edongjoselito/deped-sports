@@ -21,9 +21,10 @@ class Provincial extends CI_Controller
         $municipality = $this->input->get('municipality', TRUE);
 
         $isGrouped = ($group === 'Elementary' || $group === 'Secondary');
-        $paraMode = 'exclude';
+        $paraMode = ($group === 'PARA') ? 'include' : 'exclude';
 
-        $winners  = $this->Winners_model->get_winners_list($isGrouped ? $group : null, $municipality, $paraMode);
+        $municipalityMatch = ($group === 'PARA') ? 'like' : 'exact';
+        $winners  = $this->Winners_model->get_winners_list($isGrouped ? $group : null, $municipality, $paraMode, $municipalityMatch);
         $overview = $this->Winners_model->get_overview($isGrouped ? $group : null, $municipality, $paraMode);
         $active   = $isGrouped ? $group : 'ALL';
         $tally    = $isGrouped
@@ -70,7 +71,7 @@ class Provincial extends CI_Controller
         $municipality = $this->input->get('municipality', TRUE);
         $paraMode = 'include';
 
-        $winners  = $this->Winners_model->get_winners_list(null, $municipality, $paraMode);
+        $winners  = $this->Winners_model->get_winners_list(null, $municipality, $paraMode, 'like');
         $overview = $this->Winners_model->get_overview(null, $municipality, $paraMode);
         $tally    = $this->Winners_model->get_medal_tally($paraMode);
 
