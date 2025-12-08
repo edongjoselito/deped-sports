@@ -164,27 +164,31 @@ class Winners_model extends CI_Model
     public function get_recent_winners($limit = 10)
     {
         $this->db->select("
-            id,
-            event_id,
-            event_name,
-            event_group,
-            category,
-            first_name,
-            middle_name,
-            last_name,
-            CASE
-                WHEN TRIM(IFNULL(last_name, '')) = '' THEN TRIM(CONCAT_WS(' ', first_name, middle_name))
-                ELSE TRIM(CONCAT_WS(' ', CONCAT(last_name, ','), first_name, middle_name))
-            END AS full_name,
-            medal,
-            municipality,
-            school,
-            coach,
-            created_at
-        ", FALSE);
+        id,
+        event_id,
+        event_name,
+        event_group,
+        category,
+        first_name,
+        middle_name,
+        last_name,
+        CASE
+            WHEN TRIM(IFNULL(last_name, '')) = '' THEN TRIM(CONCAT_WS(' ', first_name, middle_name))
+            ELSE TRIM(CONCAT_WS(' ', CONCAT(last_name, ','), first_name, middle_name))
+        END AS full_name,
+        medal,
+        municipality,
+        school,
+        coach,
+        created_at
+    ", FALSE);
         $this->db->from('winners');
         $this->db->order_by('created_at', 'DESC');
-        $this->db->limit($limit);
+
+        // ✅ Only apply limit if a positive integer is given
+        if ($limit !== null && (int) $limit > 0) {
+            $this->db->limit((int) $limit);
+        }
 
         return $this->db->get()->result();
     }
@@ -321,5 +325,34 @@ class Winners_model extends CI_Model
             ->where('event_id', $id)
             ->limit(1)
             ->count_all_results('winners') > 0;
+    }
+    /**
+     * Check if a winner already exists for the same event + medal + person/team + municipality.
+     *
+     * This works for both Individual and Team entries because team names are stored in first_name.
+     */
+    public function winner_exists($eventId, $medal, $firstName, $middleName, $lastName, $municipality)
+    {
+        $eventId      = (int) $eventId;
+        $medal        = trim((string) $medal);
+        $firstName    = trim((string) $firstName);
+        $middleName   = trim((string) $middleName);
+        $lastName     = trim((string) $lastName);
+        $municipality = trim((string) $municipality);
+
+        if ($eventId <= 0 || $medal === '' || $firstName === '' || $municipality === '') {
+            return false;
+        }
+
+        $this->db->from('winners');
+        $this->db->where('event_id', $eventId);
+        $this->db->where('medal', $medal);
+        $this->db->where('first_name', $firstName);
+        $this->db->where('middle_name', $middleName);
+        $this->db->where('last_name', $lastName);
+        $this->db->where('municipality', $municipality);
+        $this->db->limit(1);
+
+        return $this->db->count_all_results() > 0;
     }
 }

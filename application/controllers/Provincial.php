@@ -146,16 +146,19 @@ class Provincial extends CI_Controller
                     return;
                 }
 
+                $inserted   = 0;
+                $duplicates = array();
+
                 foreach ($winnerRows as $row) {
-                    $groupId = (int) $this->input->post('group_id', TRUE);
+                    $groupId    = (int) $this->input->post('group_id', TRUE);
                     $categoryId = (int) $this->input->post('category_id', TRUE);
-                    $groupName = isset($event->group_name) ? $event->group_name : '';
+                    $groupName  = isset($event->group_name) ? $event->group_name : '';
                     $categoryName = $event->category_name;
 
                     if ($groupId > 0) {
                         $groupRow = $this->Events_model->get_group($groupId);
                         if ($groupRow && !empty($groupRow->group_name)) {
-                            $groupName = isset($groupRow->group_name) ? $groupRow->group_name : '';
+                            $groupName = $groupRow->group_name;
                         }
                     }
 
@@ -166,31 +169,78 @@ class Provincial extends CI_Controller
                         }
                     }
 
+                    // 🔁 Duplicate guard: same event + same medal + same winner/team + same municipality
+                    if ($this->Winners_model->winner_exists(
+                        $event->event_id,
+                        $row['medal'],
+                        $row['first_name'],
+                        $row['middle_name'],
+                        $row['last_name'],
+                        $row['municipality']
+                    )) {
+                        // Build a friendly label for the flash message
+                        $displayName = trim($row['first_name'] . ' ' . $row['last_name']);
+                        if ($displayName === '') {
+                            $displayName = $row['first_name'];
+                        }
+                        $duplicates[] = sprintf(
+                            '%s – %s (%s)',
+                            $row['medal'],
+                            $displayName,
+                            $row['municipality']
+                        );
+                        continue; // ⏭ skip insert
+                    }
+
                     $insert = array(
-                        'event_id'    => $event->event_id,
-                        'event_name'  => $event->event_name,
-                        'event_group' => $groupName,
-                        'category'    => $categoryName,
-                        'first_name'  => $row['first_name'],
-                        'middle_name' => $row['middle_name'],
-                        'last_name'   => $row['last_name'],
-                        'medal'       => $row['medal'],
+                        'event_id'     => $event->event_id,
+                        'event_name'   => $event->event_name,
+                        'event_group'  => $groupName,
+                        'category'     => $categoryName,
+                        'first_name'   => $row['first_name'],
+                        'middle_name'  => $row['middle_name'],
+                        'last_name'    => $row['last_name'],
+                        'medal'        => $row['medal'],
                         'municipality' => $row['municipality'],
-                        'school'      => $row['school'],
-                        'coach'       => $row['coach'],
+                        'school'       => $row['school'],
+                        'coach'        => $row['coach'],
                     );
 
                     $this->Winners_model->insert_winner($insert);
+                    $inserted++;
                 }
 
-                $count = count($winnerRows);
-                $message = $count > 1
-                    ? $count . ' winners saved successfully.'
-                    : 'Winner saved successfully.';
-                if (!empty($skippedRows)) {
-                    $message .= ' (Skipped ' . $skippedRows . ' incomplete row' . ($skippedRows > 1 ? 's' : '') . '.)';
+
+                // Build final feedback message
+                $messageParts = array();
+
+                if ($inserted > 0) {
+                    $base = $inserted > 1
+                        ? $inserted . ' winners saved successfully.'
+                        : 'Winner saved successfully.';
+                    if (!empty($skippedRows)) {
+                        $base .= ' (Skipped ' . $skippedRows . ' incomplete row' . ($skippedRows > 1 ? 's' : '') . '.)';
+                    }
+                    $messageParts[] = $base;
                 }
-                $this->session->set_flashdata('success', $message);
+
+                if (!empty($duplicates)) {
+                    $messageParts[] = 'Duplicate entries skipped (same event, winner, and medal already exist): ' .
+                        implode('; ', $duplicates);
+                }
+
+                // If absolutely nothing was saved
+                if (empty($messageParts)) {
+                    $messageParts[] = 'No winners were saved. All rows were duplicate or incomplete.';
+                }
+
+                // Decide whether to show as success or error
+                if ($inserted > 0) {
+                    $this->session->set_flashdata('success', implode(' ', $messageParts));
+                } else {
+                    $this->session->set_flashdata('error', implode(' ', $messageParts));
+                }
+
                 redirect('provincial/admin');
                 return;
             }
@@ -199,7 +249,8 @@ class Provincial extends CI_Controller
         // pass meet settings to the admin form
         $data['meet'] = $this->MeetSettings_model->get_settings();
         // Show a larger slice so bulk entries aren't hidden
-        $data['recent_winners'] = $this->Winners_model->get_recent_winners(200);
+        // Load ALL winners so DataTables search can see every encoded event
+        $data['recent_winners'] = $this->Winners_model->get_recent_winners(null);
         $data['event_categories'] = $this->Events_model->get_categories();
         $data['event_groups'] = $this->Events_model->get_groups();
         $data['events'] = $this->Events_model->get_events_with_meta_and_counts();
@@ -743,7 +794,6 @@ class Provincial extends CI_Controller
         $this->redirect_back();
     }
 
-
     // CRUD: update event
     public function update_event()
     {
@@ -753,19 +803,33 @@ class Provincial extends CI_Controller
         $this->form_validation->set_rules('category_name', 'Category', 'trim');
 
         if ($this->form_validation->run()) {
-            $eventId    = (int) $this->input->post('event_id', TRUE);
-            $name       = $this->input->post('event_name', TRUE);
-            $groupId    = (int) $this->input->post('group_id', TRUE);
+            $eventId      = (int) $this->input->post('event_id', TRUE);
+            $name         = $this->input->post('event_name', TRUE);
+            $groupId      = (int) $this->input->post('group_id', TRUE);
             $categoryName = $this->input->post('category_name', TRUE);
-            $categoryId = $categoryName !== '' ? $this->Events_model->ensure_category($categoryName) : null;
+            $categoryId   = $categoryName !== '' ? $this->Events_model->ensure_category($categoryName) : null;
 
+            // Make sure the record exists
             $existing = $this->Events_model->get_event_details($eventId);
             if (!$existing) {
                 $this->session->set_flashdata('error', 'Event not found.');
-                redirect('provincial/admin');
+                $this->redirect_back();
                 return;
             }
 
+            // 🔒 DUPLICATE GUARD:
+            // Check if another row already has the same (event_name + group_id + category_id)
+            // Exclude the current event_id from the check.
+            if ($this->Events_model->has_duplicate_combo($name, $groupId, $categoryId, $eventId)) {
+                $this->session->set_flashdata(
+                    'error',
+                    'Cannot update event: another event with the same name, group, and category already exists.'
+                );
+                $this->redirect_back();
+                return;
+            }
+
+            // Safe to update
             $this->Events_model->update_event($eventId, $name, $groupId, $categoryId);
             $this->session->set_flashdata('success', 'Event updated.');
         } else {

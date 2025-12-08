@@ -85,6 +85,31 @@ class Events_model extends CI_Model
     {
         return $this->db->delete('event_categories', array('category_id' => (int) $category_id));
     }
+
+    /**
+     * Check if a combination of event_name + group_id + category_id
+     * already exists in event_master (optionally excluding one event_id).
+     */
+    public function has_duplicate_combo($name, $group_id, $category_id = null, $excludeEventId = null)
+    {
+        $this->db->from('event_master em');
+        $this->db->where('em.event_name', trim($name));
+        $this->db->where('em.group_id', (int) $group_id);
+
+        if ($category_id === null) {
+            // category_id IS NULL
+            $this->db->where('em.category_id IS NULL', null, false);
+        } else {
+            $this->db->where('em.category_id', (int) $category_id);
+        }
+
+        if ($excludeEventId !== null) {
+            $this->db->where('em.event_id !=', (int) $excludeEventId);
+        }
+
+        return $this->db->count_all_results() > 0;
+    }
+
     public function create_event($name, $group_id, $category_id = null)
     {
         $data = array(
@@ -93,30 +118,18 @@ class Events_model extends CI_Model
             'category_id' => $category_id !== null ? (int) $category_id : null,
         );
 
-        // ── Check for duplicate BEFORE insert ─────────────────────────────
-        $this->db->where('event_name', $data['event_name']);
-        $this->db->where('group_id', $data['group_id']);
-
-        if ($data['category_id'] === null) {
-            // CI generates "category_id IS NULL"
-            $this->db->where('category_id', null);
-        } else {
-            $this->db->where('category_id', $data['category_id']);
-        }
-
-        $existing = $this->db->get('event_master')->row();
-
-        if ($existing) {
+        // ── Check for duplicate BEFORE insert (using helper) ─────────────
+        if ($this->has_duplicate_combo($data['event_name'], $data['group_id'], $data['category_id'])) {
             // Duplicate found – do NOT insert, just return info
             return array(
                 'success'  => false,
                 'error'    => 'duplicate',
                 'message'  => 'An event with the same name, group, and category already exists.',
-                'event_id' => (int) $existing->event_id,
+                'event_id' => null,
             );
         }
 
-        // ── No duplicate, proceed with insert ─────────────────────────────
+        // ── No duplicate, proceed with insert ───────────────────────────
         $ok = $this->db->insert('event_master', $data);
 
         if ($ok) {
@@ -136,7 +149,6 @@ class Events_model extends CI_Model
             'db_error' => $dbError,
         );
     }
-
 
     public function update_event($event_id, $name, $group_id, $category_id = null)
     {
@@ -199,6 +211,7 @@ class Events_model extends CI_Model
         $this->db->join('event_groups eg', 'eg.group_id = em.group_id', 'left');
         $this->db->join('event_categories ec', 'ec.category_id = em.category_id', 'left');
         $this->db->join('winners w', 'w.event_id = em.event_id', 'left');
+
         if ($paraMode === 'include') {
             $this->db->group_start();
             $this->db->like('LOWER(em.event_name)', 'paragames');
@@ -214,6 +227,7 @@ class Events_model extends CI_Model
             $this->db->not_like('LOWER(em.event_name)', 'paralympic games');
             $this->db->group_end();
         }
+
         $this->db->group_by(array(
             'em.event_id',
             'em.event_name',

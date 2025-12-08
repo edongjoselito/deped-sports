@@ -78,12 +78,12 @@
             <div class="content">
                 <div class="container-fluid">
                     <?php
-                    $validation_list = validation_errors('<li>', '</li>');
-                    $error_message   = $this->session->flashdata('error');
-                    $success_message = $this->session->flashdata('success');
+                    $validation_list       = validation_errors('<li>', '</li>');
+                    $error_message         = $this->session->flashdata('error');
+                    $success_message       = $this->session->flashdata('success');
                     $event_categories_list = isset($event_categories) ? $event_categories : array();
-                    $event_groups_list = isset($event_groups) ? $event_groups : array();
-                    $events_list = isset($events) ? $events : array();
+                    $event_groups_list     = isset($event_groups) ? $event_groups : array();
+                    $events_list           = isset($events) ? $events : array();
                     ?>
 
                     <div class="row align-items-center mb-3">
@@ -150,18 +150,18 @@
                                                 <?php if (!empty($events_list)): ?>
                                                     <?php $eventIndex = 0; ?>
                                                     <?php foreach ($events_list as $event): ?>
-                                                        <tr data-winners="<?= isset($event->winners_count) ? (int) $event->winners_count : 0; ?>"
-                                                            data-has-winner="<?= isset($event->winners_count) && (int) $event->winners_count > 0 ? 1 : 0; ?>"
+                                                        <tr data-winners="<?= isset($event->winners_count) ? (int)$event->winners_count : 0; ?>"
+                                                            data-has-winner="<?= isset($event->winners_count) && (int)$event->winners_count > 0 ? 1 : 0; ?>"
                                                             data-original-index="<?= $eventIndex; ?>">
                                                             <td><?= htmlspecialchars($event->event_name, ENT_QUOTES, 'UTF-8'); ?></td>
                                                             <td><?= htmlspecialchars($event->group_name ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                                             <td><?= htmlspecialchars($event->category_name ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                                             <?php
-                                                            $winnerCount = isset($event->winners_count) ? (int) $event->winners_count : 0;
-                                                            $goldCount = isset($event->gold_count) ? (int) $event->gold_count : 0;
-                                                            $silverCount = isset($event->silver_count) ? (int) $event->silver_count : 0;
-                                                            $bronzeCount = isset($event->bronze_count) ? (int) $event->bronze_count : 0;
-                                                            $hasWinners = $winnerCount > 0;
+                                                            $winnerCount = isset($event->winners_count) ? (int)$event->winners_count : 0;
+                                                            $goldCount   = isset($event->gold_count) ? (int)$event->gold_count : 0;
+                                                            $silverCount = isset($event->silver_count) ? (int)$event->silver_count : 0;
+                                                            $bronzeCount = isset($event->bronze_count) ? (int)$event->bronze_count : 0;
+                                                            $hasWinners  = $winnerCount > 0;
                                                             ?>
                                                             <td class="align-middle winner-col event-winner-cell"
                                                                 data-winners="<?= $winnerCount; ?>"
@@ -189,13 +189,13 @@
                                                                         data-placement="top"
                                                                         title="Edit"
                                                                         aria-label="Edit"
-                                                                        data-id="<?= (int) $event->event_id; ?>"
+                                                                        data-id="<?= (int)$event->event_id; ?>"
                                                                         data-name="<?= htmlspecialchars($event->event_name, ENT_QUOTES, 'UTF-8'); ?>"
-                                                                        data-group-id="<?= $event->group_id !== null ? (int) $event->group_id : ''; ?>"
+                                                                        data-group-id="<?= $event->group_id !== null ? (int)$event->group_id : ''; ?>"
                                                                         data-category-name="<?= htmlspecialchars($event->category_name ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                                                         <i class="mdi mdi-pencil"></i>
                                                                     </button>
-                                                                    <form action="<?= site_url('provincial/delete_event/' . (int) $event->event_id); ?>"
+                                                                    <form action="<?= site_url('provincial/delete_event/' . (int)$event->event_id); ?>"
                                                                         method="post" onsubmit="return confirm('Delete this event?');" class="m-0 p-0">
                                                                         <input type="hidden" name="return_to" value="<?= uri_string(); ?>">
                                                                         <button type="submit"
@@ -259,7 +259,7 @@
                         <select name="group_id" id="eventGroup" class="form-control" required>
                             <option value="">-- Select Group --</option>
                             <?php foreach ($event_groups_list as $group): ?>
-                                <option value="<?= (int) $group->group_id; ?>">
+                                <option value="<?= (int)$group->group_id; ?>">
                                     <?= htmlspecialchars($group->group_name, ENT_QUOTES, 'UTF-8'); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -397,18 +397,21 @@
                 if (eventsTable) {
                     eventsTable.column(3).visible(showWinnersOnly);
                     if (showWinnersOnly) {
+                        // Sort by winners desc, then Event asc
                         eventsTable.order([
-                            [3, 'desc']
+                            [3, 'desc'],
+                            [0, 'asc']
                         ]).draw();
                     } else {
+                        // ✅ always sort by Event only when showing all
                         eventsTable.order([
-                            [1, 'asc'],
                             [0, 'asc']
                         ]).draw();
                     }
                     return;
                 }
 
+                // Fallback (non-DataTables) – not really used in your setup
                 var $tbody = $('#eventsTable tbody');
                 var rows = $tbody.children('tr').get();
 
@@ -460,11 +463,6 @@
                     applyEventsFilter();
                     if (eventsTable) {
                         eventsTable.columns.adjust();
-                        if (showWinnersOnly) {
-                            eventsTable.order([
-                                [3, 'desc']
-                            ]).draw();
-                        }
                     }
                 });
             }
@@ -473,6 +471,7 @@
                 eventsTable = $('#eventsTable').DataTable({
                     pageLength: 10,
                     lengthChange: false,
+                    // ✅ default sort: Event only
                     order: [
                         [0, 'asc']
                     ],
